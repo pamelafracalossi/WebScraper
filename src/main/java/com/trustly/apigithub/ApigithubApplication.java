@@ -8,7 +8,6 @@ public class ApigithubApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ApigithubApplication.class, args);
-		System.out.println("hello world");
 	}
 
 }
