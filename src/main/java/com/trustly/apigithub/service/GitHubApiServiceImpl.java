@@ -27,12 +27,6 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     private static final String URL_GIT_HUB = "https://github.com";
     private static final String BREADCRUMB = "id=\"blob-path\"";
     private static final String RAW = "id=\"c\"";
-    private static final String FINAL_PATH = "class=\"final-path\"";
-    private static final String LINES = "lines (";
-    private static final String BYTES = "Bytes";
-    private static final String KB = "KB";
-    private static final String MB = "MB";
-
 
     @Override
     public List<GitHubDto> getInformationRepositorieFiles(String urlGitHub, List<GitHubDto> repositorieInformation) {
@@ -95,34 +89,19 @@ public class GitHubApiServiceImpl implements GitHubApiService {
             String line;
             boolean c = true;
             while ((line = bufferedReader.readLine()) != null && c) {
-                StringBuilder currentLine = new StringBuilder();
-                currentLine.append(line + "\n");
                 content.append(line + "\n");
-
-                if (content.toString().contains(BREADCRUMB) && !content.toString().contains(RAW)) {
-                    if (currentLine.toString().contains(FINAL_PATH)) {
-                        gitHubDto.setExtension(getExtention(currentLine.toString()));
-                    }
-                    if (currentLine.toString().contains(LINES)) {
-                        gitHubDto.setLines(getLines(currentLine.toString()));
-                    }
-                    if (currentLine.toString().contains(BYTES) || currentLine.toString().contains(KB)
-                            || currentLine.toString().contains(MB)) {
-                        gitHubDto.setBytes(getBytes(currentLine.toString()));
-                    }
-                } else {
-                    if (content.toString().contains(BREADCRUMB)) {
-                        c = false;
-                    }
+                if (content.toString().contains(BREADCRUMB) && content.toString().contains(RAW)) {
+                    c = false;
                 }
             }
+            gitHubDto.setExtension(getExtention(content.toString()));
+            gitHubDto.setLines(getLines(content.toString()));
+            gitHubDto.setBytes(getBytes(content.toString()));
             bufferedReader.close();
             putInformationFileInRepositorieInformation(gitHubDto, repositorieInformation);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     private void putInformationFileInRepositorieInformation(GitHubDto gitHubDto, List<GitHubDto> repositorieInformation) {
@@ -202,5 +181,4 @@ public class GitHubApiServiceImpl implements GitHubApiService {
         }
         return null;
     }
-
 }
