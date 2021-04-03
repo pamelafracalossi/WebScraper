@@ -1,12 +1,7 @@
-package com.trustly.apigithub.controller;
+package com.trustly.apigithub.service;
 
 import com.trustly.apigithub.dto.GitHubDto;
-import com.trustly.apigithub.dto.GitHubRepositorieDto;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,28 +10,32 @@ import java.net.URLConnection;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
-@RestController
-@RequestMapping(value = "/greeting")
-public class WebScraperController {
+@Component("GitHubApiServiceImpl")
+public class GitHubApiServiceImpl implements GitHubApiService {
+
+    private static final String FILE_LIST = "id=\"files\"";
+    private static final String README = "id=\"readme\"";
+    private static final String HREF = "href=";
+    private static final String LINK_PRIMARY = "Link--primary";
+    private static final String TREE = "/tree/";
+    private static final String BLOB = "/blob/";
+    private static final String URL_GIT_HUB = "https://github.com";
+    private static final String BREADCRUMB = "id=\"blob-path\"";
+    private static final String RAW = "id=\"c\"";
+    private static final String FINAL_PATH = "class=\"final-path\"";
+    private static final String LINES = "lines (";
+    private static final String BYTES = "Bytes";
+    private static final String KB = "KB";
+    private static final String MB = "MB";
 
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GitHubDto>> findAll() {
-
-        GitHubRepositorieDto repositorieInformation = new GitHubRepositorieDto();
-        getFiles("https://github.com/Prempeh-Gyan/WebScraper", repositorieInformation);
-
-        return ResponseEntity.ok().body(repositorieInformation.getRepositorieInformation());
-    }
-
-    private StringBuilder getFiles(String urlGitHub, GitHubRepositorieDto repositorieInformation) {
+    @Override
+    public List<GitHubDto> getInformationRepositorieFiles(String urlGitHub, List<GitHubDto> repositorieInformation) {
         StringBuilder content = new StringBuilder();
         List<String> urlFolderList = new ArrayList<>();
 
@@ -46,23 +45,24 @@ public class WebScraperController {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
             String line;
             boolean c = true;
+
             while ((line = bufferedReader.readLine()) != null && c) {
                 StringBuilder currentLine = new StringBuilder();
                 currentLine.append(line + "\n");
                 content.append(line + "\n");
 
-                if (content.toString().contains("class=\"sr-only\"") && !content.toString().contains("id=\"readme\"")) {
-                    if (currentLine.toString().contains("href=") && currentLine.toString().contains("Link--primary")) {
-                        if (currentLine.toString().contains("/tree/")) {
+                if (content.toString().contains(FILE_LIST) && !content.toString().contains(README)) {
+                    if (currentLine.toString().contains(HREF) && currentLine.toString().contains(LINK_PRIMARY)) {
+                        if (currentLine.toString().contains(TREE)) {
                             urlFolderList.add(getUrl(currentLine.toString()));
                         } else {
-                            if (currentLine.toString().contains("/blob/")) {
+                            if (currentLine.toString().contains(BLOB)) {
                                 getInformationFile(getUrl(currentLine.toString()), repositorieInformation);
                             }
                         }
                     }
                 } else {
-                    if (content.toString().contains("class=\"sr-only\"")) {
+                    if (content.toString().contains(FILE_LIST)) {
                         c = false;
                     }
                 }
@@ -71,25 +71,24 @@ public class WebScraperController {
 
             for (String folder : urlFolderList) {
                 StringBuilder urlFolder = new StringBuilder();
-                urlFolder.append("https://github.com");
+                urlFolder.append(URL_GIT_HUB);
                 urlFolder.append(folder);
-                getFiles(urlFolder.toString(), repositorieInformation);
+                getInformationRepositorieFiles(urlFolder.toString(), repositorieInformation);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return content;
+        return repositorieInformation;
     }
 
-    private void getInformationFile(String partialUrlFile, GitHubRepositorieDto repositorieInformation) {
+    private void getInformationFile(String partialUrlFile, List<GitHubDto> repositorieInformation) {
         StringBuilder content = new StringBuilder();
         StringBuilder urlFile = new StringBuilder();
-        urlFile.append("https://github.com");
+        urlFile.append(URL_GIT_HUB);
         urlFile.append(partialUrlFile);
         GitHubDto gitHubDto = new GitHubDto();
 
         try {
-
             URL url = new URL(urlFile.toString());
             URLConnection urlConnection = url.openConnection();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
@@ -100,18 +99,19 @@ public class WebScraperController {
                 currentLine.append(line + "\n");
                 content.append(line + "\n");
 
-                if (content.toString().contains("id=\"blob-path\"") && !content.toString().contains("id=\"raw-url\"")) {
-                    if (currentLine.toString().contains("class=\"final-path\"")) {
+                if (content.toString().contains(BREADCRUMB) && !content.toString().contains(RAW)) {
+                    if (currentLine.toString().contains(FINAL_PATH)) {
                         gitHubDto.setExtension(getExtention(currentLine.toString()));
                     }
-                    if (currentLine.toString().contains("lines")) {
+                    if (currentLine.toString().contains(LINES)) {
                         gitHubDto.setLines(getLines(currentLine.toString()));
                     }
-                    if (currentLine.toString().contains("Bytes") || currentLine.toString().contains("KB")) {
+                    if (currentLine.toString().contains(BYTES) || currentLine.toString().contains(KB)
+                            || currentLine.toString().contains(MB)) {
                         gitHubDto.setBytes(getBytes(currentLine.toString()));
                     }
                 } else {
-                    if (content.toString().contains("id=\"blob-path\"")) {
+                    if (content.toString().contains(BREADCRUMB)) {
                         c = false;
                     }
                 }
@@ -125,34 +125,35 @@ public class WebScraperController {
 
     }
 
-    private void putInformationFileInRepositorieInformation(GitHubDto gitHubDto, GitHubRepositorieDto repositorieInformation) {
-        GitHubDto gitHub = repositorieInformation.getRepositorieInformation().stream()
+    private void putInformationFileInRepositorieInformation(GitHubDto gitHubDto, List<GitHubDto> repositorieInformation) {
+        GitHubDto gitHub = repositorieInformation.stream()
                 .filter(r -> r.getExtension().equals(gitHubDto.getExtension()))
                 .findAny()
                 .orElse(null);
 
-        if (gitHub != null){
+        if (gitHub != null) {
             gitHub.setLines(gitHub.getLines() + gitHubDto.getLines());
             gitHub.setBytes(gitHub.getLines() + gitHubDto.getLines());
-            gitHub.setCount(gitHub.getCount()+1);
-        }else {
-            repositorieInformation.getRepositorieInformation().add(gitHubDto);
+            gitHub.setCount(gitHub.getCount() + 1);
+        } else {
+            repositorieInformation.add(gitHubDto);
         }
     }
 
 
-
-    private Long getBytes(String toString) {
-        Pattern pattern = Pattern.compile("    (\\S+) Bytes");
-        Pattern pattern2 = Pattern.compile("    (\\S+) KB");
-        Matcher matcher = pattern.matcher(toString);
-        Matcher matcher2 = pattern2.matcher(toString);
-        if (matcher.find()) {
-            String result = matcher.group(1);
+    private Long getBytes(String line) {
+        Pattern bytes = Pattern.compile("    (\\S+) Bytes");
+        Pattern kb = Pattern.compile("    (\\S+) KB");
+        Pattern mb = Pattern.compile("    (\\S+) MB");
+        Matcher matcherBytes = bytes.matcher(line);
+        Matcher matcherKb = kb.matcher(line);
+        Matcher matcherMb = mb.matcher(line);
+        if (matcherBytes.find()) {
+            String result = matcherBytes.group(1);
             return Long.valueOf(result);
         } else {
-            if (matcher2.find()) {
-                String result = matcher2.group(1);
+            if (matcherKb.find()) {
+                String result = matcherKb.group(1);
                 NumberFormat format = NumberFormat.getInstance(Locale.US);
                 Number number = 0;
                 try {
@@ -199,6 +200,7 @@ public class WebScraperController {
             String linktTag = pageMatcher.group().replace(" href=\"", "");
             return linktTag.substring(0, linktTag.length() - 1);
         }
-        return "";
+        return null;
     }
+
 }

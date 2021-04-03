@@ -4,8 +4,8 @@ public class GitHubDto {
 
     private String extension;
     private Long count = 1L;
-    private Long lines;
-    private Long Bytes;
+    private Long lines = 0L;
+    private Long Bytes = 0L;
 
     public String getExtension() {
         return extension;
