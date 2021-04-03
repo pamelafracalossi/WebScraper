@@ -15,10 +15,12 @@ import java.net.URLConnection;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping(value = "/greeting")
@@ -36,7 +38,6 @@ public class WebScraperController {
 
     private StringBuilder getFiles(String urlGitHub, GitHubRepositorieDto repositorieInformation) {
         StringBuilder content = new StringBuilder();
-        List<String> urlFilesList = new ArrayList<>();
         List<String> urlFolderList = new ArrayList<>();
 
         try {
@@ -77,7 +78,6 @@ public class WebScraperController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //System.out.println(urlFilesList);
         return content;
     }
 
@@ -117,12 +117,30 @@ public class WebScraperController {
                 }
             }
             bufferedReader.close();
+            putInformationFileInRepositorieInformation(gitHubDto, repositorieInformation);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
+
+    private void putInformationFileInRepositorieInformation(GitHubDto gitHubDto, GitHubRepositorieDto repositorieInformation) {
+        GitHubDto gitHub = repositorieInformation.getRepositorieInformation().stream()
+                .filter(r -> r.getExtension().equals(gitHubDto.getExtension()))
+                .findAny()
+                .orElse(null);
+
+        if (gitHub != null){
+            gitHub.setLines(gitHub.getLines() + gitHubDto.getLines());
+            gitHub.setBytes(gitHub.getLines() + gitHubDto.getLines());
+            gitHub.setCount(gitHub.getCount()+1);
+        }else {
+            repositorieInformation.getRepositorieInformation().add(gitHubDto);
+        }
+    }
+
+
 
     private Long getBytes(String toString) {
         Pattern pattern = Pattern.compile("    (\\S+) Bytes");
@@ -131,12 +149,10 @@ public class WebScraperController {
         Matcher matcher2 = pattern2.matcher(toString);
         if (matcher.find()) {
             String result = matcher.group(1);
-            System.out.println(result);
             return Long.valueOf(result);
         } else {
             if (matcher2.find()) {
                 String result = matcher2.group(1);
-                System.out.println(result);
                 NumberFormat format = NumberFormat.getInstance(Locale.US);
                 Number number = 0;
                 try {
@@ -156,7 +172,6 @@ public class WebScraperController {
         Matcher matcher = pattern.matcher(toString);
         if (matcher.find()) {
             String result = matcher.group(1);
-            System.out.println(result);
             return Long.valueOf(result);
         }
         return 0L;
@@ -170,13 +185,11 @@ public class WebScraperController {
             int index = result.lastIndexOf('.');
             if (index > 0) {
                 String extension = result.substring(index);
-                System.out.println(extension);
                 return extension;
             }
         }
-        return "";
+        return "without extension";
     }
-
 
     private String getUrl(String tagHtml) {
         Pattern p = Pattern.compile("\\s*(?i)href\\s*=\\s*(\"([^\"]*\")|'[^']*'|([^'\">\\s]+))");

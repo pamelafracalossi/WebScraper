@@ -3,7 +3,7 @@ package com.trustly.apigithub.dto;
 public class GitHubDto {
 
     private String extension;
-    private Long count;
+    private Long count = 1L;
     private Long lines;
     private Long Bytes;
 
