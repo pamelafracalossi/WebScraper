@@ -72,7 +72,7 @@ public class WebScraperController {
                 StringBuilder urlFolder = new StringBuilder();
                 urlFolder.append("https://github.com");
                 urlFolder.append(folder);
-                    getFiles(urlFolder.toString(), repositorieInformation);
+                getFiles(urlFolder.toString(), repositorieInformation);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,7 +133,7 @@ public class WebScraperController {
             String result = matcher.group(1);
             System.out.println(result);
             return Long.valueOf(result);
-        }else{
+        } else {
             if (matcher2.find()) {
                 String result = matcher2.group(1);
                 System.out.println(result);
@@ -167,8 +167,12 @@ public class WebScraperController {
         Matcher matcher = pattern.matcher(toString);
         if (matcher.find()) {
             String result = matcher.group(1);
-            System.out.println(result);
-            return result;
+            int index = result.lastIndexOf('.');
+            if (index > 0) {
+                String extension = result.substring(index);
+                System.out.println(extension);
+                return extension;
+            }
         }
         return "";
     }
