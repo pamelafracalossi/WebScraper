@@ -142,9 +142,9 @@ public class GitHubApiServiceImpl implements GitHubApiService {
 
 
     private Long getBytes(String line) {
-        Pattern bytes = Pattern.compile("    (\\S+) Bytes");
-        Pattern kb = Pattern.compile("    (\\S+) KB");
-        Pattern mb = Pattern.compile("    (\\S+) MB");
+        Pattern bytes = Pattern.compile(" {4}(\\S+) Bytes");
+        Pattern kb = Pattern.compile(" {4}(\\S+) KB");
+        Pattern mb = Pattern.compile(" {4}(\\S+) MB");
         Matcher matcherBytes = bytes.matcher(line);
         Matcher matcherKb = kb.matcher(line);
         Matcher matcherMb = mb.matcher(line);
@@ -169,7 +169,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     }
 
     private Long getLines(String toString) {
-        Pattern pattern = Pattern.compile("      (\\S+) lines");
+        Pattern pattern = Pattern.compile(" {6}(\\S+) lines");
         Matcher matcher = pattern.matcher(toString);
         if (matcher.find()) {
             String result = matcher.group(1);
@@ -184,7 +184,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
         if (matcher.find()) {
             String result = matcher.group(1);
             int index = result.lastIndexOf('.');
-            if (index > 0) {
+            if (index >= 0) {
                 String extension = result.substring(index);
                 return extension;
             }
