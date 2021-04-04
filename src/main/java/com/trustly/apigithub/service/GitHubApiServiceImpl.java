@@ -94,10 +94,10 @@ public class GitHubApiServiceImpl implements GitHubApiService {
                     c = false;
                 }
             }
+            bufferedReader.close();
             gitHubDto.setExtension(getExtention(content.toString()));
             gitHubDto.setLines(getLines(content.toString()));
             gitHubDto.setBytes(getBytes(content.toString()));
-            bufferedReader.close();
             putInformationFileInRepositorieInformation(gitHubDto, repositorieInformation);
         } catch (Exception e) {
             e.printStackTrace();
@@ -142,9 +142,22 @@ public class GitHubApiServiceImpl implements GitHubApiService {
                 }
                 Double d = number.doubleValue() * 1000;
                 return (d.longValue());
+            } else {
+                if (matcherMb.find()) {
+                    String result = matcherMb.group(1);
+                    NumberFormat format = NumberFormat.getInstance(Locale.US);
+                    Number number = 0;
+                    try {
+                        number = format.parse(result);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    Double d = number.doubleValue() * 1000000;
+                    return (d.longValue());
+                }
             }
+            return 0L;
         }
-        return 0L;
     }
 
     private Long getLines(String toString) {
