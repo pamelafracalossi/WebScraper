@@ -11,18 +11,19 @@ Hence an example of a full request to the API-endpoint will be :
 
 You can also access the application through [Heroku](https://blueberry-cupcake-41686.herokuapp.com/?url=https://github.com/pamelafracalossi/WebScraper)
 
-###Getting the Project
+### Getting the Project
 
 *Required*
 
 - Maven 3.3+
 - JDK 8+
 
-###Running the Project
+### Running the Project
 
 To run the project, first navigate into the source directory cd apigithub and execute the following command:
 
 - mvn spring-boot:run:
+
 that's all you need to get it started.
 
 The application starts the server instance on port 8080.
